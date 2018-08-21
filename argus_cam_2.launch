@@ -1,0 +1,23 @@
+<launch>
+  <!-- Command Line Arguments -->
+  <arg name="device" default="2" /> 
+  <arg name="width" default="1280" />                <!-- Image Width -->
+  <arg name="height" default="720" />                <!-- Image Height -->
+  <arg name="frame_duration" default="0.1" />       
+  <arg name="max_exposure_time" default="0.001" />       
+  <arg name="max_gain" default="8" />       
+
+
+  <!-- Start the argus-camera-node node -->
+  <node pkg="argus-camera-node" type="argus-cam" name="argus_cam_$(arg device)">
+    <param name="device" value="$(arg device)" />
+    <param name="max_exposure_time" value="$(arg max_exposure_time)" />
+    <param name="frame_duration" value="$(arg frame_duration)" />
+    <param name="max_gain" value="$(arg max_gain)" />
+    <param name="width" value="$(arg width)" />
+    <param name="height" value="$(arg height)" />
+
+
+    <remap from="camera/image_raw" to="argus_cam_$(arg device)/image_raw" />
+  </node>
+</launch>
