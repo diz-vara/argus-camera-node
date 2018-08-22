@@ -36,6 +36,7 @@
 using namespace std;
 using namespace Argus;
 using namespace EGLStream;
+
 namespace fs = std::experimental::filesystem;
 
 constexpr double NANO = 1e-9;
@@ -451,9 +452,14 @@ namespace {
         uint64_t currentFrameNumber = 0;
 
         status = iCaptureSession->repeat(request.get());
-        CheckZero(status, "repeatBurst");
+        CheckZero(status, "repeatBusrst");
 
         int nativeBufFd = -1;
+        int nativeBufFd2 = -1;
+        NvBufferTransformParams nvBufferTransformParams;
+        nvBufferTransformParams.transform_flip = NvBufferTransform_Rotate180;
+        nvBufferTransformParams.transform_flag = NVBUFFER_TRANSFORM_FLIP;
+
         JpegEncoder jpegEncoder;
 
         while(ros::ok()) {
@@ -498,7 +504,10 @@ namespace {
                     nativeBufFd = iNativeBuffer->createNvBuffer(iStream->getResolution(),
                                                                 NvBufferColorFormat_YUV420,
                                                                 NvBufferLayout_BlockLinear);
-                    if (nativeBufFd == -1)
+                    nativeBufFd2 = iNativeBuffer->createNvBuffer(iStream->getResolution(),
+                                                                NvBufferColorFormat_YUV420,
+                                                                NvBufferLayout_BlockLinear);
+                    if (nativeBufFd == -1 || nativeBufFd2 == -1)
                     {
                         throw runtime_error("createNvBuffer error");
                     }
@@ -506,7 +515,11 @@ namespace {
 
                 status = iNativeBuffer->copyToNvBuffer(nativeBufFd);
                 CheckZero(status, "copyToNvBuffer error");
-                jpegBuf = jpegEncoder.EncodeFromFd(nativeBufFd, jpegBufSize);
+                CheckZero(NvBufferTransform(nativeBufFd, nativeBufFd2, &nvBufferTransformParams),
+                          "NvBufferTransform error");
+
+
+                jpegBuf = jpegEncoder.EncodeFromFd(nativeBufFd2, jpegBufSize);
 
                 sensor_msgs::CameraInfo cur_cinfo = camera_info_manager_.getCameraInfo();
                 sensor_msgs::CameraInfoPtr cinfo;
@@ -530,6 +543,10 @@ namespace {
         if (nativeBufFd != -1)
         {
             CheckZero(NvBufferDestroy(nativeBufFd), "NvBufferDestroy error");
+        }
+        if (nativeBufFd2 != -1)
+        {
+            CheckZero(NvBufferDestroy(nativeBufFd2), "NvBufferDestroy error");
         }
         return;
     }
