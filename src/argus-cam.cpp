@@ -13,7 +13,6 @@
 #include <cmath>
 #include <pthread.h>
 #include <atomic>
-#include "cxxopts.hpp"
 #include <algorithm>
 #include <NvJpegEncoder.h>
 #include <EGLStream/NV/ImageNativeBuffer.h>
